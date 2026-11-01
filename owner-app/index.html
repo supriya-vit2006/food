@@ -13,7 +13,7 @@ async function lo(){O=await A('/orders')}
 async function init(){if(!tk)return login();try{me=await A('/me');await Promise.all([ld(),lo()])}catch(e){tk=localStorage.tk='';return login('Please sign in again')}
 $('#hn').textContent=me.name+' · Owner';$('#lo').style.display='';render();clearInterval(window.iv);window.iv=setInterval(async()=>{try{await lo();if(tab=='orders')render()}catch(e){}},4000)}
 let mode='in',CL=[];
-async function login(m=''){$('#lo').style.display='none';if(!CL.length){try{CL=await api('/canteens')}catch(e){m='Cannot reach the server. Try again in a minute.'}}
+async function login(m=''){$('#lo').style.display='none';if(!CL.length){try{CL=await api('/canteens')}catch(e){m=e.message}}
 const up=mode=='up';$('#m').innerHTML=`<div class=card style="max-width:420px;margin:30px auto"><h1 style="font-size:22px;text-align:center"><span aria-hidden=true>🔐</span> Owner ${up?'sign up':'sign in'}</h1><p class=mu role=alert>${m}</p>
 <label class=blk for=cn>Your canteen</label><select id=cn><option value="">Choose your canteen${CL.map(c=>`<option value="${c.id}">${c.name}`).join('')}</select>
 <label class=blk for=e>Email</label><input id=e type=email autocomplete=email placeholder=you@example.com>

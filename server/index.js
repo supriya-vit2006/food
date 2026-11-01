@@ -2,7 +2,7 @@ const express=require('express'),cors=require('cors'),jwt=require('jsonwebtoken'
 const db=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_KEY),S=process.env.JWT_SECRET,app=express();
 if(!S)throw new Error('JWT_SECRET missing');
 app.set('trust proxy',1);
-app.use(cors({origin:process.env.FRONTEND_URL?process.env.FRONTEND_URL.split(','):true}));
+app.use(cors({origin:process.env.FRONTEND_URL?process.env.FRONTEND_URL.split(',').map(x=>x.trim().replace(/\/+$/,'')).filter(Boolean):true}));
 app.use(express.json({limit:'200kb'}));
 const ok=(r,p)=>p.then(({data,error})=>error?r.status(400).json({error:error.message}):r.json(data));
 app.get('/health',(q,r)=>r.send('ok'));
