@@ -1,0 +1,45 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Canteen Owner</title>
+<link rel=stylesheet href=shared.css>
+<script src=config.js></script></head>
+<body><header><span id=hn>UniHub Food Owner</span><span id=hb><button id=th aria-label="Switch light or dark mode">🌓</button> <button id=lo style=display:none onclick="tk='';localStorage.tk='';clearInterval(window.iv);login()">Logout</button></span></header><main id=m></main><footer class=mu style="text-align:center;padding:18px"><a href=privacy.html>Privacy</a> · <a href=terms.html>Terms</a> · <a href=refund.html>Refund policy</a></footer>
+<script>
+const $=s=>document.querySelector(s),R=document.documentElement,E=s=>String(s).replace(/"/g,'&quot;');
+let me,D=[],O=[],tab='orders',F={v:'all',c:'all'};
+R.dataset.t=localStorage.t||'dark';
+$('#th').onclick=()=>R.dataset.t=localStorage.t=R.dataset.t=='dark'?'light':'dark';
+let tk=localStorage.tk||'';const A=(p,o)=>api('/owner'+p,o,tk);
+async function ld(){D=await A('/dishes')}
+async function lo(){O=await A('/orders')}
+async function init(){if(!tk)return login();try{me=await A('/me');await Promise.all([ld(),lo()])}catch(e){tk=localStorage.tk='';return login('Please sign in again')}
+$('#hn').textContent=me.name+' · Owner';$('#lo').style.display='';render();clearInterval(window.iv);window.iv=setInterval(async()=>{try{await lo();if(tab=='orders')render()}catch(e){}},4000)}
+let mode='in',CL=[];
+async function login(m=''){$('#lo').style.display='none';if(!CL.length){try{CL=await api('/canteens')}catch(e){m='Cannot reach the server. Try again in a minute.'}}
+const up=mode=='up';$('#m').innerHTML=`<div class=card style="max-width:420px;margin:30px auto"><h1 style="font-size:22px;text-align:center"><span aria-hidden=true>🔐</span> Owner ${up?'sign up':'sign in'}</h1><p class=mu role=alert>${m}</p>
+<label class=blk for=cn>Your canteen</label><select id=cn><option value="">Choose your canteen${CL.map(c=>`<option value="${c.id}">${c.name}`).join('')}</select>
+<label class=blk for=e>Email</label><input id=e type=email autocomplete=email placeholder=you@example.com>
+<label class=blk for=p>Password</label><input id=p type=password autocomplete="${up?'new-password':'current-password'}" placeholder="${up?'At least 8 characters':'Your password'}">
+${up?`<label class=blk for=cd>Canteen access code</label><input id=cd autocomplete=off placeholder="Given to you by the admin"><label class=chk><input type=checkbox id=ag style=width:auto> I agree to the <a href=terms.html target=_blank>Terms</a> and <a href=privacy.html target=_blank>Privacy policy</a></label>`:''}
+<button class=p style="width:100%;margin-top:14px" onclick=go()>${up?'Create owner account':'Sign in to dashboard'}</button>
+<button style="width:100%;margin-top:8px" onclick="mode=mode=='in'?'up':'in';login()">${up?'Already have an account? Sign in':'New owner? Sign up'}</button></div>`}
+async function go(){const b={canteen:$('#cn').value,email:$('#e').value.trim(),password:$('#p').value};
+if(!b.canteen||!b.email||!b.password)return login('Please fill in all fields.');
+if(mode=='up'){if(!$('#ag').checked)return login('Please accept the Terms and Privacy policy.');b.code=$('#cd').value.trim()}
+try{const r=await api('/owner/'+(mode=='up'?'signup':'login'),{method:'POST',body:b});tk=localStorage.tk=r.token;init()}catch(e){login(e.message)}}
+function render(){$('#m').innerHTML=`<div class=tabs>${['orders','menu'].map(t=>`<button class="${tab==t?'on':''}" onclick="tab='${t}';render()">${t=='orders'?'Orders ('+O.filter(o=>o.status=='processing').length+')':'Menu'}</button>`).join('')}</div>`+(tab=='orders'?vOrders():vMenu())}
+function vOrders(){return O.map(o=>`<div class=card><div class=row><span class=tk>${o.token}</span><span class=mu>${new Date(o.created_at).toLocaleTimeString()} · ₹${o.total}</span></div><div style=margin:6px 0>${o.items.map(i=>i.name+' × '+i.q).join(', ')}</div>${o.status=='processing'?`<button class=p onclick="done('${o.id}')">Done ✓</button>`:'<span class=mu>✔ Ready</span>'}</div>`).join('')||'<p class=mu>No orders yet.</p>'}
+async function done(id){await A('/orders/'+id+'/done',{method:'PATCH'});await lo();render()}
+function vMenu(){const cats=[...new Set(D.map(d=>d.category))],S=D.filter(d=>(F.v=='all'||(F.v=='v')==d.veg)&&(F.c=='all'||d.category==F.c)),
+ch=(k,v,l)=>`<button class="chip ${F[k]==v?'p':''}" onclick="F.${k}='${v}';render()">${l}</button>`;
+return`<div class="card dr"><b>Apply to all</b><label class=mu>min<input id=ae class=sm type=number></label><label class=mu>qty<input id=aq class=sm type=number></label><label class=mu><input id=au type=checkbox style=width:auto>∞ unlimited</label><button class=p onclick=ap()>Apply</button></div>
+<div class="card dr"><b>Add dish</b><input id=an class=nm aria-label="New dish name" placeholder="Dish name"><label class=mu>₹<input id=ap class=sm type=number></label><input id=ac class=sm aria-label=Category style=width:100px placeholder=Category><select id=av aria-label="Veg or non-veg" class=sm style=width:auto><option value=1>Veg<option value=0>Non-veg</select><button class=p onclick=addD()>Add</button></div>
+<details class=card><summary>Bulk import</summary><p class=mu>One per line: name, price, category, v or n</p><textarea id=bi aria-label="Dishes to import" rows=4></textarea><br><br><button class=p onclick=imp()>Import</button></details>
+${ch('v','all','All')}${ch('v','v','Veg')}${ch('v','n','Non-veg')}<br>${ch('c','all','Everything')}${cats.map(c=>ch('c',c,c)).join('')}`+
+S.map(d=>`<div class="card dr"><span class="dot ${d.veg?'v':'n'}"></span><input class=nm aria-label="Dish name" value="${E(d.name)}" onchange="u('${d.id}','name',this.value)"><label class=mu>₹<input class=sm type=number value=${d.price} onchange="u('${d.id}','price',+this.value)"></label><label class=mu>min<input class=sm type=number value=${d.est_min} onchange="u('${d.id}','est_min',+this.value)"></label><label class=mu>qty<input class=sm type=number ${d.qty==null?'disabled':''} value="${d.qty??''}" onchange="u('${d.id}','qty',+this.value)"></label><label class=mu><input type=checkbox style=width:auto ${d.qty==null?'checked':''} aria-label=Unlimited onchange="unl('${d.id}',this.checked)">∞</label><select class=sm aria-label="Veg or non-veg" style=width:auto onchange="u('${d.id}','veg',this.value=='1')"><option value=1 ${d.veg?'selected':''}>Veg<option value=0 ${d.veg?'':'selected'}>Non-veg</select><button aria-label="Delete dish" onclick="del('${d.id}')">🗑</button></div>`).join('')}
+async function u(id,f,v){await A('/dishes/'+id,{method:'PATCH',body:{[f]:v}});await ld()}
+async function unl(id,on){await u(id,'qty',on?null:20);render()}
+async function del(id){if(!confirm('Delete dish?'))return;await A('/dishes/'+id,{method:'DELETE'});await ld();render()}
+async function addD(){const n=$('#an').value.trim();if(!n)return;await A('/dishes',{method:'POST',body:{name:n,price:+$('#ap').value||0,category:$('#ac').value.trim()||'General',veg:$('#av').value=='1'}});await ld();render()}
+async function ap(){const p={},e=$('#ae').value,q=$('#aq').value;if(e)p.est_min=+e;if($('#au').checked)p.qty=null;else if(q)p.qty=+q;if(!Object.keys(p).length)return;await A('/dishes/apply',{method:'POST',body:p});await ld();render()}
+async function imp(){const rows=$('#bi').value.split('\n').map(l=>l.split(',').map(s=>s.trim())).filter(r=>r[0]&&+r[1]).map(r=>({name:r[0],price:+r[1],category:r[2]||'General',veg:(r[3]||'v').toLowerCase()!='n'}));if(rows.length)await A('/dishes/bulk',{method:'POST',body:{rows}});await ld();render()}
+init();
+</script></body></html>
