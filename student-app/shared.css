@@ -44,3 +44,25 @@ main{padding-bottom:96px}
 @media print{.inv,.bar{display:none}}
 body{min-height:100vh;display:flex;flex-direction:column}main{width:100%;flex:1;margin:0 auto}footer{margin-top:auto}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.chk span{flex:1}input[type=time]{width:auto;min-width:150px}
+body{font-size:14px}
+b,strong{font-weight:600}
+header{font-size:15px;font-weight:600}
+button{font-size:13.5px;font-weight:500}
+button.p{font-weight:500;padding:11px 16px}
+label.blk{font-weight:500;font-size:13.5px}
+h1{font-size:19px!important;font-weight:600}h2{font-size:17px;font-weight:600}h3{font-size:16px;font-weight:600;margin:12px 0 8px}
+input,select,textarea{font-size:14px;padding:11px 14px}
+.mu,.chip{font-size:12.5px}
+.tk{font-size:22px;font-weight:700}
+.live{font-weight:600}
+:root{color-scheme:light;--btn:#e8ebfb}[data-t=dark]{color-scheme:dark;--btn:#2a3350}
+body{font-size:14px;line-height:1.45}b,strong{font-weight:600}h1,h2,h3{font-weight:600;letter-spacing:-.01em}h1{font-size:19px}h3{font-size:16px;margin:14px 0 8px}
+header{font-size:15px;font-weight:600}.tk{font-size:22px;font-weight:700}
+button{background:var(--btn);border-color:transparent;font-weight:500;font-size:13.5px;transition:filter .15s,transform .05s}button:hover{filter:brightness(1.1)}button:active{transform:scale(.98)}
+button.p,.tabs .on{font-weight:600}.chip{font-weight:500}header button{background:#ffffff26;color:#fff}
+input,select,textarea{font-size:14px}input[type=number]{-moz-appearance:textfield}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=checkbox]{accent-color:#7a8cf0;width:16px;height:16px;padding:0}
+.f{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--mu);font-weight:500}.f input,.f select{width:96px;padding:8px 10px;border-radius:10px;font-size:13.5px}
+.fl{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}.ct{font-weight:600;font-size:13px}
+.ic{padding:8px 10px;background:transparent}.dr .nm,input.nm{border-radius:10px;padding:8px 10px}
+.chip.ok{background:#14532d;color:#bbf7d0}.chip.out{background:#7f1d1d;color:#fecaca}
