@@ -33,3 +33,9 @@ input,select,textarea{border-radius:16px;padding:14px 16px}
 .sm,.dr .nm{border-radius:10px;padding:7px 10px}
 button.p{border-radius:16px;padding:14px}
 label.blk::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#8b9cf5;margin-right:8px}
+header{justify-content:space-between;padding:14px 16px;text-align:left}
+#hb{position:static!important;transform:none!important;display:flex;gap:8px;align-items:center}
+#hn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+footer{padding-bottom:24px}
+body{min-height:100vh;display:flex;flex-direction:column}main{width:100%;flex:1;margin:0 auto}footer{margin-top:auto}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.chk span{flex:1}input[type=time]{width:auto;min-width:150px}

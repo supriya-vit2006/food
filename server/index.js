@@ -14,7 +14,9 @@ app.get('/api/dishes',(q,r)=>ok(r,db.from('dishes').select('*').eq('available',t
 app.get('/api/orders',(q,r)=>ok(r,db.from('orders').select('*').eq('student_id',String(q.query.student||'-')).gte('created_at',day0()).order('created_at',{ascending:false}).limit(20)));
 app.post('/api/orders',rl({windowMs:60000,limit:20}),(q,r)=>{const b=q.body||{};
  if(!process.env.PAY_PASSWORD||b.pass!==process.env.PAY_PASSWORD)return r.status(402).json({error:'Payment failed: wrong password'});
- ok(r,db.rpc('place_order',{p_canteen:b.canteen,p_student:String(b.student),p_items:b.items,p_pickup:b.pickup&&!isNaN(Date.parse(b.pickup))?new Date(b.pickup).toISOString():null}))});
+ const a={p_canteen:b.canteen,p_student:String(b.student),p_items:b.items,p_pickup:b.pickup&&!isNaN(Date.parse(b.pickup))?new Date(b.pickup).toISOString():null};
+ if(a.p_pickup&&Date.parse(a.p_pickup)>Date.now()+75*6e4)return r.status(400).json({error:'You can choose a pickup time up to 1 hour ahead'});
+ ok(r,db.rpc('place_order',a).then(x=>x.error&&/schema cache/.test(x.error.message)?(delete a.p_pickup,db.rpc('place_order',a)):x))});
 const rd=(u,c)=>({token:jwt.sign({cid:c.id,name:c.name},S,{expiresIn:'30d'})});
 app.post('/api/owner/login',rl({windowMs:900000,limit:30}),async(q,r)=>{const{canteen,email='',password=''}=q.body||{};
  const{data:o}=await db.from('owners').select('*,canteens(id,name)').eq('email',String(email).trim().toLowerCase()).maybeSingle();
@@ -33,7 +35,8 @@ const F=['name','price','category','veg','est_min','qty','available'],pick=b=>Ob
 O.get('/me',(q,r)=>r.json({name:q.o.name}));
 O.get('/dishes',(q,r)=>ok(r,db.from('dishes').select('*').eq('canteen_id',q.o.cid).order('category').order('name')));
 O.get('/orders',(q,r)=>ok(r,db.from('orders').select('*').eq('canteen_id',q.o.cid).gte('created_at',day0()).order('created_at',{ascending:false}).limit(60)));
-O.patch('/orders/:id/done',(q,r)=>ok(r,db.from('orders').update({status:'ready'}).eq('id',q.params.id).eq('canteen_id',q.o.cid).select()));
+O.patch('/orders/:id/done',(q,r)=>ok(r,db.from('orders').update({status:'ready'}).eq('id',q.params.id).eq('canteen_id',q.o.cid).eq('status','processing').select()));
+O.patch('/orders/:id/collected',(q,r)=>ok(r,db.from('orders').update({status:'collected'}).eq('id',q.params.id).eq('canteen_id',q.o.cid).eq('status','ready').select()));
 O.post('/dishes/apply',(q,r)=>ok(r,db.from('dishes').update(pick(q.body)).eq('canteen_id',q.o.cid).select('id')));
 O.post('/dishes/bulk',(q,r)=>ok(r,db.from('dishes').insert((q.body.rows||[]).slice(0,500).map(x=>({...pick(x),canteen_id:q.o.cid}))).select('id')));
 O.post('/dishes',(q,r)=>ok(r,db.from('dishes').insert({...pick(q.body),canteen_id:q.o.cid}).select()));

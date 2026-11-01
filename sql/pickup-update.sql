@@ -15,10 +15,12 @@ for it in select * from jsonb_array_elements(p_items) loop
 end loop;
 pk:=coalesce(p_pickup,now()+mx*interval '1 minute');
 if pk<now()+mx*interval '1 minute'-interval '2 minutes' then raise exception 'Pickup time is too early. Your order needs about % minutes. Open the cart and choose a later time.',mx; end if;
-if pk>now()+interval '8 hours' then raise exception 'Pickup time is too far away'; end if;
+if pk>now()+greatest(60,mx+30)*interval '1 minute'+interval '2 minutes' then raise exception 'You can choose a pickup time up to 1 hour from now'; end if;
 insert into counters(day,n) values(ist,1) on conflict(day) do update set n=counters.n+1 returning counters.n into k;
 insert into orders(token,canteen_id,student_id,items,total,pickup_at) values(chr(65+(ist-date '2026-01-01')%26)||k,p_canteen,p_student,lines,tot,pk) returning * into o;
 return o;
 end$$;
 revoke execute on function place_order(uuid,text,jsonb,timestamptz) from public,anon,authenticated;
 grant execute on function place_order(uuid,text,jsonb,timestamptz) to service_role;
+notify pgrst,'reload schema';
+notify pgrst, 'reload schema';
