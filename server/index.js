@@ -40,8 +40,8 @@ O.get('/history',async(q,r)=>{const re=/^\d{4}-\d{2}-\d{2}$/,f=String(q.query.fr
  if((e-s)/864e5>92)return r.status(400).json({error:'Please choose 92 days or fewer'});
  const rows=[];for(let a=0;a<20000;a+=1000){const{data,error}=await db.from('orders').select('token,created_at,total,status,items').eq('canteen_id',q.o.cid).gte('created_at',new Date(s).toISOString()).lt('created_at',new Date(e+864e5).toISOString()).order('created_at').range(a,a+999);if(error)return r.status(400).json({error:error.message});rows.push(...data);if(data.length<1000)break}
  const days={},items={},R={orders:rows.length,total:0,collected:{n:0,total:0},open:{n:0,total:0}};
- for(const o of rows){const d=new Date(Date.parse(o.created_at)+19800000).toISOString().slice(0,10),x=days[d]||(days[d]={d,n:0,total:0,ct:0});x.n++;x.total+=o.total;R.total+=o.total;if(o.status=='collected'){x.ct+=o.total;R.collected.n++;R.collected.total+=o.total}else{R.open.n++;R.open.total+=o.total}for(const i of o.items)items[i.name]=(items[i.name]||0)+i.q}
- r.json({...R,days:Object.values(days),items:Object.entries(items).sort((a,b)=>b[1]-a[1]),list:rows.slice(-300).reverse().map(({token,created_at,total,status})=>({token,created_at,total,status}))})});
+ for(const o of rows){const d=new Date(Date.parse(o.created_at)+19800000).toISOString().slice(0,10),x=days[d]||(days[d]={d,n:0,total:0,ct:0});x.n++;x.total+=o.total;R.total+=o.total;if(o.status=='collected'){x.ct+=o.total;R.collected.n++;R.collected.total+=o.total}else{R.open.n++;R.open.total+=o.total}for(const i of o.items){const y=items[i.name]||(items[i.name]={q:0,amt:0,days:{}});y.q+=i.q;y.amt+=i.price*i.q;y.days[d]=(y.days[d]||0)+i.q}}
+ r.json({...R,days:Object.values(days),items,list:rows.slice(-300).reverse().map(({token,created_at,total,status,items})=>({token,created_at,total,status,items}))})});
 O.get('/me',(q,r)=>r.json({name:q.o.name}));
 O.get('/dishes',(q,r)=>ok(r,db.from('dishes').select('*').eq('canteen_id',q.o.cid).order('category').order('name')));
 O.get('/orders',(q,r)=>ok(r,db.from('orders').select('*').eq('canteen_id',q.o.cid).gte('created_at',day0()).order('created_at',{ascending:false}).limit(60)));
