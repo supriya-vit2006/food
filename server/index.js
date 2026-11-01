@@ -1,6 +1,7 @@
 const express=require('express'),cors=require('cors'),jwt=require('jsonwebtoken'),bcrypt=require('bcryptjs'),rl=require('express-rate-limit'),{createClient}=require('@supabase/supabase-js');
 const db=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_KEY),S=process.env.JWT_SECRET,app=express();
 if(!S)throw new Error('JWT_SECRET missing');
+try{const k=process.env.SUPABASE_SERVICE_KEY||'',r=k.startsWith('eyJ')?JSON.parse(Buffer.from(k.split('.')[1],'base64url')).role:k.split('_').slice(0,2).join('_');console.log('Supabase key type:',r);if(/anon|publishable/.test(r))console.error('WRONG KEY: this is a public key. Use the secret / service_role key.')}catch(e){}
 app.set('trust proxy',1);
 app.use(cors({origin:process.env.FRONTEND_URL?process.env.FRONTEND_URL.split(',').map(x=>x.trim().replace(/\/+$/,'')).filter(Boolean):true}));
 app.use(express.json({limit:'200kb'}));
@@ -11,7 +12,7 @@ app.get('/api/dishes',(q,r)=>ok(r,db.from('dishes').select('*').eq('available',t
 app.get('/api/orders',(q,r)=>ok(r,db.from('orders').select('*').eq('student_id',String(q.query.student||'-')).order('created_at',{ascending:false}).limit(20)));
 app.post('/api/orders',rl({windowMs:60000,limit:20}),(q,r)=>{const b=q.body||{};
  if(!process.env.PAY_PASSWORD||b.pass!==process.env.PAY_PASSWORD)return r.status(402).json({error:'Payment failed: wrong password'});
- ok(r,db.rpc('place_order',{p_canteen:b.canteen,p_student:String(b.student),p_items:b.items}))});
+ ok(r,db.rpc('place_order',{p_canteen:b.canteen,p_student:String(b.student),p_items:b.items,p_pickup:b.pickup&&!isNaN(Date.parse(b.pickup))?new Date(b.pickup).toISOString():null}))});
 const rd=(u,c)=>({token:jwt.sign({cid:c.id,name:c.name},S,{expiresIn:'30d'})});
 app.post('/api/owner/login',rl({windowMs:900000,limit:30}),async(q,r)=>{const{canteen,email='',password=''}=q.body||{};
  const{data:o}=await db.from('owners').select('*,canteens(id,name)').eq('email',String(email).trim().toLowerCase()).maybeSingle();
