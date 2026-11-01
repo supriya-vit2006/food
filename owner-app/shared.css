@@ -61,3 +61,4 @@ input[type=checkbox]{accent-color:#7a8cf0;width:16px;height:16px;padding:0}
 .fl{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}.ct{font-weight:600;font-size:13px}
 .ic{padding:8px 10px;background:transparent}.dr .nm,input.nm{border-radius:10px;padding:8px 10px}
 .chip.ok{background:#14532d;color:#bbf7d0}.chip.out{background:#7f1d1d;color:#fecaca}
+.f input[type=date]{width:150px}

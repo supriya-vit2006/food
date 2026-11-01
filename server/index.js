@@ -35,7 +35,13 @@ const O=express.Router();
 O.use((q,r,n)=>{try{q.o=jwt.verify((q.headers.authorization||'').slice(7),S);n()}catch(e){r.status(401).json({error:'Unauthorized'})}});
 const F=['name','price','category','veg','est_min','qty','daily_qty','available'],pick=b=>Object.fromEntries(Object.entries(b||{}).filter(([k])=>F.includes(k)));
 const pick2=b=>{const o=pick(b);if('daily_qty' in o){o.qty=o.daily_qty;o.qty_day=o.daily_qty==null?null:today()}return o};
-O.get('/history',(q,r)=>{const d=String(q.query.date||''),s=Date.parse(d+'T00:00:00+05:30');if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||isNaN(s))return r.status(400).json({error:'Invalid date'});ok(r,db.from('orders').select('*').eq('canteen_id',q.o.cid).gte('created_at',new Date(s).toISOString()).lt('created_at',new Date(s+864e5).toISOString()).order('created_at').limit(1000))});
+O.get('/history',async(q,r)=>{const re=/^\d{4}-\d{2}-\d{2}$/,f=String(q.query.from||q.query.date||''),t=String(q.query.to||q.query.date||f),s=Date.parse(f+'T00:00:00+05:30'),e=Date.parse(t+'T00:00:00+05:30');
+ if(!re.test(f)||!re.test(t)||isNaN(s)||isNaN(e)||e<s)return r.status(400).json({error:'Invalid dates'});
+ if((e-s)/864e5>92)return r.status(400).json({error:'Please choose 92 days or fewer'});
+ const rows=[];for(let a=0;a<20000;a+=1000){const{data,error}=await db.from('orders').select('token,created_at,total,status,items').eq('canteen_id',q.o.cid).gte('created_at',new Date(s).toISOString()).lt('created_at',new Date(e+864e5).toISOString()).order('created_at').range(a,a+999);if(error)return r.status(400).json({error:error.message});rows.push(...data);if(data.length<1000)break}
+ const days={},items={},R={orders:rows.length,total:0,collected:{n:0,total:0},open:{n:0,total:0}};
+ for(const o of rows){const d=new Date(Date.parse(o.created_at)+19800000).toISOString().slice(0,10),x=days[d]||(days[d]={d,n:0,total:0,ct:0});x.n++;x.total+=o.total;R.total+=o.total;if(o.status=='collected'){x.ct+=o.total;R.collected.n++;R.collected.total+=o.total}else{R.open.n++;R.open.total+=o.total}for(const i of o.items)items[i.name]=(items[i.name]||0)+i.q}
+ r.json({...R,days:Object.values(days),items:Object.entries(items).sort((a,b)=>b[1]-a[1]),list:rows.slice(-300).reverse().map(({token,created_at,total,status})=>({token,created_at,total,status}))})});
 O.get('/me',(q,r)=>r.json({name:q.o.name}));
 O.get('/dishes',(q,r)=>ok(r,db.from('dishes').select('*').eq('canteen_id',q.o.cid).order('category').order('name')));
 O.get('/orders',(q,r)=>ok(r,db.from('orders').select('*').eq('canteen_id',q.o.cid).gte('created_at',day0()).order('created_at',{ascending:false}).limit(60)));
